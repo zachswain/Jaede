@@ -1,7 +1,15 @@
 const Discord = require('discord.js');
-const bot = new Discord.Client();
+const Commando = require('discord.js-commando');
+const path = require('path');
 const fs = require('fs');
-const { token } = require("../config-jaede.json");
+const { token, clientID } = require(__dirname + "/../config.json");
+
+const bot = new Discord.Client();
+
+const client = new Commando.Client({
+	commandPrefix : "!",
+	owner : clientID
+});
 
 bot.once('ready', () => {
 	console.log('Ready!');
