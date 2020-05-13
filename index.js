@@ -1,12 +1,13 @@
 const Discord = require('discord.js');
-const client = new Discord.Client();
+const bot = new Discord.Client();
 const fs = require('fs');
+const { token } = require("../config-jaede.json");
 
-client.once('ready', () => {
+bot.once('ready', () => {
 	console.log('Ready!');
 });
 
-client.on('message', message => {
+bot.on('message', message => {
 	//console.log(message);
 	if( message.content=="!ping" ) {
 	    message.channel.send("pong!");
@@ -21,10 +22,8 @@ client.on('message', message => {
 	}
 });
 
-try {
-    var token = fs.readFileSync('../token', 'utf8');
-    client.login(token);
-} catch (e) {
-    console.log("Error: " + e.stack);
-    process.exit();
-}
+bot.login(token).then(tokenConfirmation => {
+	if( tokenConfirmation!=token ) {
+		throw "Could not login, tokens do not match";
+	}
+});
