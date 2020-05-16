@@ -2,46 +2,44 @@ const Discord = require('discord.js');
 const Commando = require('discord.js-commando');
 const path = require('path');
 const fs = require('fs');
-const { token, clientID } = require(__dirname + "/../config.json");
-const Sequelize = require("sequelize");
+
+
+const { token, clientID, commandPrefix } = require(__dirname + "/../config.json");
+
+const Utils = require("./utils/utils.js");
 const Database = require("./Database.js");
 
 const bot = new Commando.Client({
-	commandPrefix : "!",
-	owner : clientID
+	commandPrefix : commandPrefix,
+	owner : clientID,
+	unknownCommandResponse: false
 });
 
-const sequelize = new Sequelize('database', 'user', 'password', {
-	host: 'localhost',
-	dialect: 'sqlite',
-	logging: false,
-	storage: 'database.sqlite'
-});
-
-const CharactersTable = sequelize.define('characters', {
-	characterName : {
-		type : Sequelize.STRING
-	},
-	userID: {
-		type: Sequelize.STRING
-	},
-	guildID : {
-		type: Sequelize.STRING
-	}
-});
+if( Database.initialized() ) {
+	console.log("Database is initialized");
+} else {
+	console.log("Database is not initialized");
+	Database.init();
+}
 
 bot.registry
 	.registerDefaultTypes()
 	.registerGroups([
-		['first', 'My first commands']
+		['characters', 'Commands relating to characters on the server']
 	])
 	.registerDefaultGroups()
-	.registerDefaultCommands()
+	//.registerDefaultCommands()
 	.registerCommandsIn(path.join(__dirname, 'commands'));
 
 bot.once('ready', () => {
-	CharactersTable.sync();
-	console.log('Ready!');
+	Database.sync().then(() => {
+		console.log('Ready!');
+		
+		//var c = Database.getModel("Character");
+		//c.findOne({ where : { characterName : "Jaede" }});
+		//console.log(c);
+	});
+	
 	bot.user.setActivity('with Commando');
 });
 
@@ -52,8 +50,6 @@ bot.on('message', message => {
 	}
 	
 	if( message.content=="!react" ) {
-		
-		
 		message
 			.react('😄')
 	    	.then(console.log)
@@ -61,12 +57,7 @@ bot.on('message', message => {
 	    		console.log(err);
 	    	});
 	    	
-		const character = CharactersTable.upsert({
-			characterName : "",
-			userID : message.author.id,
-			guildID : message.channel.guild.id
-		});
-		
+	    
 	}
 });
 
