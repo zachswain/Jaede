@@ -2,16 +2,15 @@ const Discord = require('discord.js');
 const Commando = require('discord.js-commando');
 const path = require('path');
 const fs = require('fs');
-
-
-const { token, clientID, commandPrefix } = require(__dirname + "/../config.json");
-
+const Config = require("./Config.js");
 const Utils = require("./utils/utils.js");
 const Database = require("./Database.js");
+const Character = require("./models/Character.js");
+const Property = require("./models/Property.js");
 
 const bot = new Commando.Client({
-	commandPrefix : commandPrefix,
-	owner : clientID,
+	commandPrefix : Config.commandPrefix,
+	owner : Config.clientID,
 	unknownCommandResponse: false
 });
 
@@ -35,10 +34,19 @@ bot.once('ready', () => {
 	Database.sync().then(() => {
 		console.log('Ready!');
 		
-		//var c = Database.getModel("Character");
-		//c.findOne({ where : { characterName : "Jaede" }});
-		//console.log(c);
+		/*
+		var c = Database.getModel(Character.modelName);
+		c.create({ characterName : "jaede", authorID : 1, guildID : 1 })
+			.then(character => {
+				var p = Database.getModel(Property.modelName);
+				p.create({ key : "a key", value : "a value" })
+					.then(property => {
+						character.addProperty(property);
+					});
+			});
+		*/
 	});
+		
 	
 	bot.user.setActivity('with Commando');
 });
@@ -61,8 +69,8 @@ bot.on('message', message => {
 	}
 });
 
-bot.login(token).then(tokenConfirmation => {
-	if( tokenConfirmation!=token ) {
+bot.login(Config.token).then(tokenConfirmation => {
+	if( tokenConfirmation!=Config.token ) {
 		throw "Could not login, tokens do not match";
 	}
 });
