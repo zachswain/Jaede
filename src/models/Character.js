@@ -1,29 +1,44 @@
+module.exports = {
+    modelName : "Character"
+};
+
 const Sequelize = require("sequelize");
 const Property = require("./Property.js");
+const WishlistEntry = require("./WishlistEntry.js");
+const InventoryEntry = require("./InventoryEntry.js");
+const Database = require("../Database.js");
 
-module.exports = {
-    modelName : "Character",
+Object.assign(module.exports, {
     model : {
     	characterName : {
     		type : Sequelize.CITEXT,
+    		allowNull : false,
     	},
     	authorID: {
-    		type: Sequelize.STRING
+    		type: Sequelize.STRING,
+    		allowNull : false
     	},
     	guildID : {
-    		type: Sequelize.STRING
+    		type: Sequelize.STRING,
+    		defaultValue : null
     	},
     	xp : {
     	  type : Sequelize.INTEGER,
-    	  default : 0
+    	  defaultValue : 0
     	},
     	gold  :{
     	  type : Sequelize.INTEGER,
-    	  default : 0
+    	  defaultValue : 0
+    	},
+    	portrait : {
+    	    type : Sequelize.STRING,
+    	    defaultValue : null
     	}
     },
     relationships : [
-        { modelName : Property.modelName, relationship : "hasMany" }
+        { modelName : Property.modelName, relationship : "hasMany" },
+        { modelName : WishlistEntry.modelName, relationship : "hasMany" },
+        { modelName : InventoryEntry.modelName, relationship : "hasMany" }
     ],
     options : {
         indexes : [
@@ -33,5 +48,46 @@ module.exports = {
                 fields : ["authorID"]
             }
         ]
+    },
+    
+    getCharacterByAuthorID(authorID) {
+        var model = Database.getModel(this.modelName);
+		return model.findOne({ where : { authorID : authorID }});
+    },
+    
+    getCharacterByCharacterName(characterName) {
+        var model = Database.getModel(this.modelName);
+        return model.findOne({ where : { characterName : characterName }});
+    },
+    
+    findAllLike(characterName) {
+        var model = Database.getModel(this.modelName);
+        return model.findAll({ where : 
+            {
+                [Sequelize.Op.or] : [
+                    { characterName : { [Sequelize.Op.substring] : characterName } }
+                ]
+            }   
+        })  
+    },
+    
+    create(args) {
+        var model = Database.getModel(this.modelName);
+        return model.create(args);
+    },
+    
+    xpToLevel(xp) {
+        return 1;
+    },
+    
+    getAll() {
+        var self=this;
+        return Promise.all([
+            new Promise(function(resolve, reject) {
+                self.getProperties(properties => {
+                    self.properties = properties;
+                })
+            })
+        ]);
     }
-}
+});

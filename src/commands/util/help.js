@@ -34,25 +34,6 @@ module.exports = class HelpCommand extends Command {
 		const showAll = args.command && args.command.toLowerCase() === 'all';
 		if(args.command && !showAll) {
 			if(commands.length === 1) {
-
-/*
-				let help = stripIndents`
-					${oneLine`
-						__Command **${commands[0].name}**:__ ${commands[0].description}
-						${commands[0].guildOnly ? ' (Usable only in servers)' : ''}
-						${commands[0].nsfw ? ' (NSFW)' : ''}
-					`}
-					**Format:** ${msg.anyUsage(`${commands[0].name}${commands[0].format ? ` ${commands[0].format}` : ''}`)}
-				`;
-				if(commands[0].aliases.length > 0) help += `\n**Aliases:** ${commands[0].aliases.join(', ')}`;
-				help += `\n${oneLine`
-					**Group:** ${commands[0].group.name}
-					(\`${commands[0].groupID}:${commands[0].memberName}\`)
-				`}`;
-				if(commands[0].details) help += `\n**Details:** ${commands[0].details}`;
-				if(commands[0].examples) help += `\n**Examples:**\n${commands[0].examples.join('\n')}`;
-				*/
-
                 let help = new Discord.MessageEmbed()
                 	.addFields(
                 		{ name: `${this.client.commandPrefix}${commands[0].name}${commands[0].format ? ` ${commands[0].format}` : ''}`, value: `${commands[0].description}` },

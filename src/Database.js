@@ -12,7 +12,7 @@ class Database {
     this._sequelize = new Sequelize({
     	dialect: 'sqlite',
     	storage: Config.database.location,
-    	logging : Config.database.logging,
+    	logging : console.log,
     	pool: {
           max: 5,
           min: 0,
@@ -30,6 +30,10 @@ class Database {
 			var options = object.options || {}
 			var modelName = object.modelName || name.replace(/\.js$/i, "");
 			self._models[modelName] = self._sequelize.define(modelName, object.model, options);
+			if( object.skipSync===true ) {
+					console.log("Setting sync=false on " + modelName);
+					self._models[modelName].sync = () => Promise.resolve();
+			}
 			if("relationships" in object){
 				relationships.push({
 				  modelName : modelName,
@@ -40,10 +44,10 @@ class Database {
 		});
 
 		relationships.forEach(relationship  => {
-		  var source = this._models[relationship.modelName];
+		  var source = self._models[relationship.modelName];
 
 		  relationship.relationships.forEach(relatedTo => {
-		    var target = this._models[relatedTo.modelName];
+		    var target = self._models[relatedTo.modelName];
 
 		    switch( relatedTo.relationship ) {
 		      case "hasOne":
@@ -55,6 +59,12 @@ class Database {
 		      case "belongsTo":
 		        source.belongsTo(target);
 		        break;
+		      case "belongsToMany":
+		      	console.log("relatedTo.modelName:" + relatedTo.modelName);
+		      	console.log("relatedTo:" + relatedTo.through);
+		      	console.log(target);
+		      	source.belongsToMany(target, { through : relatedTo.through });
+		      	break;
 		    }
 		    
 		    console.log("added relationship, " + source.name + " " + relatedTo.relationship + " " + target.name);
@@ -64,8 +74,12 @@ class Database {
 		console.log("Database initialized");
   }
   
-  static sync() {
-    return this._sequelize.sync({ alter : true });
+  static async sync() {
+  	var options = {};
+  	if( Config.database.sync ) {
+  		options.force = true;
+  	}
+  	return this._sequelize.sync(options);
   }
   
   static initialized() {
@@ -74,6 +88,10 @@ class Database {
   
   static getModel(modelName) {
     return this._models[modelName];
+  }
+  
+  static query(query, options) {
+  	return this._sequelize.query(query, options);
   }
 }
 

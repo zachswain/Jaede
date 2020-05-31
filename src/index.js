@@ -24,52 +24,27 @@ if( Database.initialized() ) {
 bot.registry
 	.registerDefaultTypes()
 	.registerGroups([
-		['characters', 'Commands relating to characters on the server']
+		['characters', 'Commands relating to characters registered on the server'],
+		['items', 'Commands relating to items usable on the server.'],
+		['util', 'Utility commands']
 	])
 	.registerDefaultGroups()
 	//.registerDefaultCommands()
 	.registerCommandsIn(path.join(__dirname, 'commands'));
 
 bot.once('ready', () => {
+	console.log("Syncing database");
 	Database.sync().then(() => {
 		console.log('Ready!');
-		
-		/*
-		var c = Database.getModel(Character.modelName);
-		c.create({ characterName : "jaede", authorID : 1, guildID : 1 })
-			.then(character => {
-				var p = Database.getModel(Property.modelName);
-				p.create({ key : "a key", value : "a value" })
-					.then(property => {
-						character.addProperty(property);
-					});
-			});
-		*/
 	});
 		
 	
 	bot.user.setActivity('with Commando');
 });
 
-bot.on('message', message => {
-	//console.log(message);
-	if( message.content=="!ping" ) {
-	    message.channel.send("pong!");
-	}
-	
-	if( message.content=="!react" ) {
-		message
-			.react('😄')
-	    	.then(console.log)
-	    	.catch(function(err) {
-	    		console.log(err);
-	    	});
-	    	
-	    
-	}
-});
-
+console.log("Logging in...");
 bot.login(Config.token).then(tokenConfirmation => {
+	console.log("Bot logged in");
 	if( tokenConfirmation!=Config.token ) {
 		throw "Could not login, tokens do not match";
 	}

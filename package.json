@@ -15,7 +15,9 @@
     "eslint": "^7.0.0",
     "google-spreadsheet": "^3.0.11",
     "sequelize": "^5.21.8",
+    "sequelize-fixtures": "^1.1.1",
     "sqlite": "^4.0.7",
-    "sqlite3": "^4.2.0"
+    "sqlite3": "^4.2.0",
+    "valid-url": "^1.0.9"
   }
 }

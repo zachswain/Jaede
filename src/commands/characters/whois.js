@@ -1,20 +1,28 @@
-const { Command } = require('discord.js-commando');
+//const { Command } = require('discord.js-commando');
+const BaseCommand = require("../BaseCommand.js");
 const Discord = require('discord.js');
 const Database = require("../../Database.js");
 const Character = require("../../models/Character.js");
 const Property = require("../../models/Property.js");
 const Utils = require("../../utils/utils.js");
 const Config = require("../../Config.js");
+const ValidURL = require("valid-url");
+const { stripIndents, oneLine } = require('common-tags');
 
-module.exports = class WhoisCommand extends Command {
+module.exports = class WhoisCommand extends BaseCommand {
 	constructor(client) {
 		super(client, {
 			name: 'whois',
 			aliases: [],
 			group: 'characters',
 			memberName: 'whois',
-			format: "[set|update]",
-			description: 'Details on your, or another, character on the server.',
+			format: "[args]",
+			description: `Details on your, or another, character on the server.
+			
+				__Valid Arguments__
+				*set <character name> <key> <value>* - Sets a key-value pair for the character specified.
+				*portrait [update|set] [url]* - Sets or displays the portrait you have configured as a thumbnail for your character. 
+			`,
 
 		});
 	}
@@ -26,6 +34,7 @@ module.exports = class WhoisCommand extends Command {
 			let subCommand = args.shift();
 			
 			switch( subCommand ) {
+				
 				case "set":
 					const member = message.guild.member(message.author);
 					var authorized = false;
@@ -41,8 +50,7 @@ module.exports = class WhoisCommand extends Command {
 					
 					var characterName = args.shift() || null;
 					if( characterName ) {
-						var model = Database.getModel(Character.modelName);
-						model.findOne({ where : { characterName : characterName } })
+						Character.getCharacterByCharacterName(characterName)
 							.then(character => {
 								if( character ) {
 									var key = args.shift();
@@ -56,7 +64,7 @@ module.exports = class WhoisCommand extends Command {
 														property.setDataValue("value", value)
 														property.save()
 															.then(property => {
-																self.displayCharacter(message,character);
+																Utils.CharacterUtils.displayCharacter(message,character);
 															})
 															.catch(err => {
 																message.reply("Could not update value for key '" + key + "'");
@@ -64,7 +72,7 @@ module.exports = class WhoisCommand extends Command {
 													} else {
 														property.destroy()
 															.then(() => {
-																self.displayCharacter(message, character);
+																Utils.CharacterUtils.displayCharacter(message, character);
 															})
 													}
 												} else {
@@ -72,7 +80,7 @@ module.exports = class WhoisCommand extends Command {
 													model.create({ key : key, value : value })
 														.then(property => {
 															character.addProperty(property);
-															self.displayCharacter(message, character);
+															Utils.CharacterUtils.displayCharacter(message, character);
 														})
 														.catch(err => {
 															message.reply("Could not create property.");
@@ -99,11 +107,10 @@ module.exports = class WhoisCommand extends Command {
 					if( !characterName ) {
 						this.displayHelp(message);
 					}
-					var model = Database.getModel("Character");
-					model.findOne({ where : { authorID : message.author.id, guildID : message.channel.guild.id }})
+					Character.getCharacterByAuthorID(message.author.id)
 						.then(character => {
 							if( !character ) {
-								model.create({ characterName : characterName, authorID : message.author.id, guildID : message.channel.guild.id })
+								Character.create({ characterName : characterName, authorID : message.author.id  })
 									.then(character => {
 										message.reply("Character name set: " + character.get("characterName"));	
 									})
@@ -117,14 +124,19 @@ module.exports = class WhoisCommand extends Command {
 					break;
 				default:
 					var model = Database.getModel("Character");
-					model.findOne({ where : { characterName : subCommand }})
-						.then(character => {
-							if( character ) {
-								self.displayCharacter(message, character);
-							} else {
-								message.reply("No charcter '" + subCommand + "' found");
-							}
-						})
+					var characterName = subCommand;
+					if( !characterName ) {
+						self.displaySelf(message);
+					} else {
+						model.findOne({ where : { characterName : subCommand }})
+							.then(character => {
+								if( character ) {
+									Utils.CharacterUtils.displayCharacter(message, character);
+								} else {
+									message.reply("No character '" + subCommand + "' found");
+								}
+							})
+					}
 					break;
 			}
 		} else {
@@ -138,53 +150,13 @@ module.exports = class WhoisCommand extends Command {
 			return;
 		}
 		var self=this;
-		var model = Database.getModel(Character.modelName);
-		model.findOne({ where : { authorID : message.author.id, guildID : message.channel.guild.id }})
+		Character.getCharacterByAuthorID(message.author.id)
 			.then(character => {
 				if( !character ) {
 					message.reply("No character set.");
 				} else {
-					self.displayCharacter(message, character);
+					Utils.CharacterUtils.displayCharacter(message, character);
 				}
 			});
-	}
-	
-	displayCharacter(message, character) {
-		if( !character ) {
-			message.reply("Invalid character");
-		} else {
-			character.getProperties()
-				.then(properties => {
-					var embed = new Discord.MessageEmbed()
-	                	.addFields(
-	                		{ name: `Name`, value: `${character.characterName}` },
-	                	);
-
-	                properties.forEach(property => {
-	                	embed.addFields({ name : property.key, value : property.value });
-	                });
-	                
-	                message.channel.send(embed)
-	                	.then(message => {
-	                		
-	                	})
-	                	.catch(err => {
-	                		message.reply("Can't post (do I have embed permissions?)")
-	                			.then(message => {})
-	                			.catch(console.error)
-	                	});
-				})
-				.catch(err => {
-					console.log("Caught error");
-					console.log(err);
-				});
-		}
-	}
-	
-	displayHelp(message) {
-		let commands = this.client.registry.findCommands("help", false, message);
-		if( commands.length>0 ) {
-			commands[0].run(message, { command : this.name });
-		}
 	}
 };
