@@ -70,7 +70,7 @@ Object.assign(module.exports, {
             }   
         })  
     },
-    
+
     create(args) {
         var model = Database.getModel(this.modelName);
         return model.create(args);

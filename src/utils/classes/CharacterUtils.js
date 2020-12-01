@@ -269,5 +269,23 @@ module.exports = {
 				reject(err);
 			})
 		});
+	},
+	
+	getAttunedItems(message, character) {
+		return new Promise(function(resolve, reject) {
+			var model = Database.getModel(InventoryEntry.modelName);
+			model.findAll({
+				where : {
+					CharacterId : character.getDataValue("id"),
+					attuned : true
+				}
+			})
+				.then(attunedItems => {
+					resolve(attunedItems);
+				})
+				.catch(err => {
+					reject(err);
+				})
+		})
 	}
 }

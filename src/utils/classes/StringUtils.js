@@ -158,7 +158,7 @@ class StringUtils {
         } else {
             return str;
         }
-    } 
+    }
 }
 
 module.exports = StringUtils;

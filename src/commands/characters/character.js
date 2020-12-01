@@ -20,6 +20,8 @@ module.exports = class CharacterCommand extends BaseCommand {
 				__Valid Arguments__
 				*create <character name>* - Create a new character.
 				*set <portrait|name> <args>* - Sets an attribute of your character with provided arguments.
+				*attune <item>* - Attunes you to an item in your inventory.
+				*unattune <item>* - Unattunes you from an item in your inventory.
 			`,
 
 		});
@@ -134,6 +136,104 @@ module.exports = class CharacterCommand extends BaseCommand {
 				case "display":
 				case "view":
 					this.displaySelf(message);
+					break;
+				case "attune":
+					Character.getCharacterByAuthorID(message.author.id)
+						.then(character => {
+							if( !character ) {
+								message.reply("You don't have a character registered.");
+							} else {
+								Utils.CharacterUtils.getAttunedItems(message, character)
+									.then(attunedItems => {
+										if( null!=attunedItems ) {
+											
+											if( attunedItems.length>=3 ) {
+												message.reply("You already have 3 items attuned, unattune at least one item first.");
+											} else {
+												var itemName = args.join(" ");
+									
+												Utils.CharacterUtils.getInventoryEntryByName(message, character, itemName)
+							    					.then(inventoryEntry => {
+							    						if( null==inventoryEntry ) {
+							    							message.channel.send("No matching item found/selected");
+							    						} else {
+							    							inventoryEntry.getItem()
+							    								.then(item => {
+							    									if( null!=item.getDataValue("requiresAttunement") ) {
+						    											inventoryEntry.setDataValue("attuned", true);
+						    											inventoryEntry.save()
+						    												.then(ie => {
+						    													message.channel.send(`Attuned item ${item.getDataValue("name")}`);
+						    												})
+						    												.catch(err => {
+						    													message.channel.send("An error occurred");
+						    													console.error(err);
+						    												})
+							    									} else {
+							    										message.channel.send(`'${item.getDataValue("name")}' does not require attunement.`);
+							    									}
+							    								})
+							    								.catch(err => {
+							    									message.channel.send("An error occurred");
+							    									console.error(err);
+							    								})
+							    						}
+							    					})
+											}
+										} else {
+											message.channel.send("Couldn't find attuned items, can't attune additional items!");
+										}
+									});
+									
+								
+							}
+						})
+						.catch(err => {
+							message.channel.send("An error occurred");
+							console.error(err);
+						})
+					break;
+				case "unattune":
+					Character.getCharacterByAuthorID(message.author.id)
+						.then(character => {
+							if( !character ) {
+								message.channel.send("You don't have a character registered.");
+							} else {
+								var itemName = args.join(" ");
+									
+								Utils.CharacterUtils.getInventoryEntryByName(message, character, itemName)
+			    					.then(inventoryEntry => {
+			    						if( null==inventoryEntry ) {
+			    							message.channel.send("No matching item found/selected");
+			    						} else {
+			    							inventoryEntry.getItem()
+			    								.then(item => {
+			    									if( null!=item.getDataValue("requiresAttunement") ) {
+		    											inventoryEntry.setDataValue("attuned", false);
+		    											inventoryEntry.save()
+		    												.then(ie => {
+		    													message.channel.send(`Unattuned item ${item.getDataValue("name")}`);
+		    												})
+		    												.catch(err => {
+		    													message.channel.send("An error occurred");
+		    													console.error(err);
+		    												})
+			    									} else {
+			    										message.channel.send(`'${item.getDataValue("name")}' does not require attunement.`);
+			    									}
+			    								})
+			    								.catch(err => {
+			    									message.channel.send("An error occurred");
+			    									console.error(err);
+			    								})
+			    						}
+			    					});
+							}
+						})
+						.catch(err => {
+							message.channel.send("An error occurred");
+							console.error(err);
+						})
 					break;
 				case "help":
 					this.displayHelp(message);

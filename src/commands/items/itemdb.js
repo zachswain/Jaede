@@ -1,3 +1,6 @@
+// test server #magic-item-log: 696252915626672188
+// my server #magic-item-log: 721427279820881920
+
 const { Command } = require('discord.js-commando');
 const { Op } = require("sequelize");
 const Discord = require('discord.js');
@@ -21,6 +24,7 @@ module.exports = class ItemDBCommand extends BaseCommand {
 			
 				__Valid Arguments__
                 <item name> - Looks up a specific item by its name.
+                *give* <character name> <item name> [-r reason] - Give an item to a character, optionally specifying a reason (e.g. quest, purchase, etc.).
 			`,
 
 		});
@@ -92,6 +96,20 @@ module.exports = class ItemDBCommand extends BaseCommand {
 			    	break;
 			    case "give":
 			    	var characterName = args.shift();
+			    	var reason=null;
+			    	
+			    	for( var i=0 ; i<args.length ; i++ ) {
+			    		if( args[i]=="-r" ) {
+			    			if( i<args.length-1 ) {
+			    				reason=args[i+1];
+			    				args.splice(i,2);
+			    				i--;
+			    				console.log("reason: " + reason);
+			    			} else {
+			    				message.reply("You must provide a reason with -r");
+			    			}
+			    		}
+			    	}
 			    	
 			    	Utils.CharacterUtils.getCharacterByName(message, characterName)
 			    		.then(character => {
@@ -106,7 +124,16 @@ module.exports = class ItemDBCommand extends BaseCommand {
 			    							inventoryEntry.save()
 			    								.then(entry => {
 			    									character.addInventoryEntry(entry);
-			    									message.channel.send(`Giving item ${item.getDataValue("name")} to ${character.getDataValue("characterName")}`);
+			    									var client = message.client;
+			    									message.channel.send(`Gave item ${item.getDataValue("name")} to ${character.getDataValue("characterName")}`);
+			    									client.channels.fetch(Config.commands.itemdb.magicItemLogChannel)
+			    										.then(channel => {
+			    											if( channel ) {
+			    												channel.send(`Character: ${character.getDataValue("characterName")}\nItem: ${item.getDataValue("name")}${reason?`\nReason: ${reason}`:``}`);
+			    											} else {
+			    												console.error("Couldn't get channel to send message");
+			    											}
+			    										});
 			    								});
 			    						}
 			    					})
