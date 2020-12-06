@@ -58,6 +58,21 @@ module.exports = class ItemDBCommand extends BaseCommand {
 			    case "take":
 			    	var characterName = args.shift();
 			    	
+			    	var reason=null;
+			    	
+			    	for( var i=0 ; i<args.length ; i++ ) {
+			    		if( args[i]=="-r" ) {
+			    			if( i<args.length-1 ) {
+			    				reason=args[i+1];
+			    				args.splice(i,2);
+			    				i--;
+			    				console.log("reason: " + reason);
+			    			} else {
+			    				message.reply("If you use '-r', you must provide a reason");
+			    			}
+			    		}
+			    	}
+			    	
 			    	Utils.CharacterUtils.getCharacterByName(message, characterName)
 			    		.then(character => {
 			    			if( character ) {
@@ -69,10 +84,21 @@ module.exports = class ItemDBCommand extends BaseCommand {
 			    						} else {
 			    							inventoryEntry.getItem()
 			    								.then(item => {
-	    											message.channel.send(`Taking item ${item.getDataValue("name")} from ${character.getDataValue("characterName")}`);
+	    											//message.channel.send(`Taking item ${item.getDataValue("name")} from ${character.getDataValue("characterName")}`);
 	    											character.removeInventoryEntry(inventoryEntry)
-	    												.then(character => {
-	    													message.channel.send("Removed");
+	    												.then(inventoryEntries => {
+	    													var client = message.client;
+					    									message.channel.send(`Took item ${item.getDataValue("name")} from ${character.getDataValue("characterName")}`);
+					    									client.channels.fetch(Config.commands.itemdb.magicItemLogChannel)
+					    										.then(channel => {
+					    											if( channel ) {
+					    												channel.send(`Character: ${character.getDataValue("characterName")}\nItem: ~~${item.getDataValue("name")}~~${reason?`\nReason: ${reason}`:``}`);
+					    											} else {
+					    												console.error("Couldn't get channel to send message");
+					    											}
+					    										});
+	    													
+	    													
 	    												})
 	    												.catch(err => {
 	    													message.channel.send("An error occurred");

@@ -93,6 +93,10 @@ class Database {
   static query(query, options) {
   	return this._sequelize.query(query, options);
   }
+  
+  static async startTransaction() {
+	return await this._sequelize.transaction();
+  }
 }
 
 module.exports = Database;

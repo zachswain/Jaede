@@ -124,16 +124,17 @@ module.exports = class WhoisCommand extends BaseCommand {
 					break;
 				default:
 					var model = Database.getModel("Character");
-					var characterName = subCommand;
-					if( !characterName ) {
+					args.unshift(subCommand);
+					var characterName = args.join(" ").trim();
+					if( !characterName || characterName=="" ) {
 						self.displaySelf(message);
 					} else {
-						model.findOne({ where : { characterName : subCommand }})
+						model.findOne({ where : { characterName : characterName }})
 							.then(character => {
 								if( character ) {
 									Utils.CharacterUtils.displayCharacter(message, character);
 								} else {
-									message.reply("No character '" + subCommand + "' found");
+									message.reply("No character '" + characterName + "' found");
 								}
 							})
 					}

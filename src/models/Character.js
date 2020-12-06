@@ -71,9 +71,9 @@ Object.assign(module.exports, {
         })  
     },
 
-    create(args) {
+    create(args, options=null) {
         var model = Database.getModel(this.modelName);
-        return model.create(args);
+        return model.create(args, options=null);
     },
     
     xpToLevel(xp) {
