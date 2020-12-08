@@ -8,6 +8,7 @@ const Database = require("../Database.js");
 const Character = require("./Character.js");
 const PartyInvite = require("./PartyInvite.js");
 const PartyMember = require("./PartyMember.js");
+const Utils = require("../utils/utils.js")
 
 module.exports = {
     modelName : "Party",
@@ -42,17 +43,43 @@ module.exports = {
     ],
     
     create(args, options=null) {
+        console.log(args);
+        console.log(options);
         var model = Database.getModel(this.modelName);
         return model.create(args, options);
     },
     
     getPartyByName(name) {
         var model = Database.getModel(this.modelName);
-		return model.findOne({ where : { name : name }, include : Database.getModel(PartyInvite.modelName) });
+		return model.findOne({ where : { name : name }, include : [ Database.getModel(PartyInvite.modelName), Database.getModel(PartyMember.modelName) ] });
     },
     
-    getPartyByLeaderID(leaderID) {
+    getPartiesByLeaderID(leaderID) {
         var model = Database.getModel(this.modelName);
-        return model.findOne({ where : { leaderID : leaderID }, include : Database.getModel(PartyInvite.modelName) });
+        return model.findAll({ where : { leaderID : leaderID }, include : [ Database.getModel(PartyInvite.modelName), Database.getModel(PartyMember.modelName) ] });
+    },
+    
+    getPartiesByUserID(userID) {
+        var model = Database.getModel(this.modelName);
+        return model.findAll({
+            include : [
+                Database.getModel(PartyMember.modelName),
+                Database.getModel(PartyInvite.modelName),
+                {
+                    model : Database.getModel(PartyMember.modelName),
+                    required : false
+                }
+            ],
+            where : {
+                [Sequelize.Op.or] : [
+                    {
+                        leaderID : userID
+                    },
+                    {
+                        "$PartyMembers.userID$" : userID
+                    }
+                ]
+            }
+        })
     }
 }

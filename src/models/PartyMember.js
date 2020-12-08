@@ -14,6 +14,11 @@ module.exports = {
         userID : {
             type : Sequelize.STRING,
     	    allowNull : false
+        },
+        isLeader : {
+            type : Sequelize.BOOLEAN,
+            allowNull : false,
+            defaultValue : false
         }
     },
     relationships : [
@@ -23,5 +28,19 @@ module.exports = {
     create(args) {
         var model = Database.getModel(this.modelName);
         return model.create(args);
+    },
+    
+    getByUserIDAndPartyID(userID, partyID) {
+        var model = Database.getModel(this.modelName);
+        return model.findOne({ where : {
+            [Sequelize.Op.and] : [
+                {
+                    userID : userID
+                },
+                {
+                    PartyID : partyID
+                }
+            ]
+        }})
     }
 }
